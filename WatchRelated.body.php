@@ -65,10 +65,20 @@ if ( $page->has_category("Meeting Minutes") ) {
 */
 class WatchRelated
 {
-	static public function getWatchers ($parser, ) {
+	static public function getWatchers ($parser, $pages_with_watchers) {
 		
 		$titleObj = $parser->getTitle(); //
 		$userObj  = $parser->getUser(); //
+		$userObj->addWatch( $someTitle ); //
+		
+		
+		$pages_with_watchers = explode(',', $pages_with_watchers);
+		
+		foreach( $pages_with_watchers as $page ) {
+		
+			
+		
+		}
 		
 	}
 }
