@@ -65,20 +65,87 @@ if ( $page->has_category("Meeting Minutes") ) {
 */
 class WatchRelated
 {
-	static public function getWatchers ($parser, $pages_with_watchers) {
+
+	static public function copyWatchers ($parser, $pagesToCopyWatchers) {
 		
 		$titleObj = $parser->getTitle(); //
 		$userObj  = $parser->getUser(); //
 		$userObj->addWatch( $someTitle ); //
 		
 		
-		$pages_with_watchers = explode(',', $pages_with_watchers);
+		$pagesToCopyWatchers = explode(',', $pagesToCopyWatchers);
 		
-		foreach( $pages_with_watchers as $page ) {
+		$newWatchers = array();
 		
+		foreach( $pagesToCopyWatchers as $page ) {
+	
+			$pageObj = $this->getNamespaceAndTitle( $page );
 			
-		
+			$watchers = $this->getPageWatchers( $pageObj->ns_num, $pageObj->title );
+			
+			foreach ( $watchers as $userID => $dummy ) {
+				$newWatchers[$userID] = 0; // only care about $userID, and want unique.
+			}
+
 		}
 		
+		// add list of usernames as watchers to this Title
+		foreach ($newWatchers as $userID => $dummy) {
+			$u = User::newFromId($userID);
+			$u->addWatch( $parser->getTitle() );
+		}
+		
+	}
+	
+	protected function getNamespaceAndTitle ( $pageName ) {
+	
+		// defaults
+		$ns_num = NS_MAIN;
+		$title = $pageName;
+
+		$colonPosition = strpos( $pageName, ':' ); // location of colon if exists
+		
+		// this won't test for a leading colon...but shouldn't use parser function that way anyway...
+		if ( $colonPosition ) {
+			$test_ns = $this->getNamespaceNumber( 
+				substr( $pageName, 0, $colonPosition )
+			);
+			
+			// only reset $ns and $title if has colon, and pre-colon text actually is a namespace
+			if ( $test_ns !== false ) {
+				$ns_num = $test_ns;
+				$title = substr( $pageName, $colonPosition+1 );
+			}
+		}
+		
+		return (object)array("ns_num"=>$ns_num, "title"=>$title);
+	
+	}
+	
+	// returns number of namespace (can be zero) or false. Use ===.
+	protected function getNamespaceNumber ( $ns ) {
+		global $wgCanonicalNamespaceNames;
+		
+		foreach ( $wgCanonicalNamespaceNames as $i => $text ) {
+			if (preg_match("/$ns/i", $text)) {
+				return $i;
+			}
+		}
+	
+		return false; // if $ns not found above, does not exist
+	}
+	
+	protected function getPageWatchers ($ns, $title) {
+		
+		// code adapted from Extension:WhoIsWatching
+		$dbr = wfGetDB( DB_SLAVE );
+		$watchingUserIDs = array();
+		$res = $dbr->select( 'watchlist', 'wl_user', array('wl_namespace'=>$ns, 'wl_title'=>$title), __METHOD__);
+		for ( $res as $row ) {
+			$watchingUserIDs[$row->wl_user] = 0; // only care about the user ID, and want unique
+		}
+
+		return $watchingUserIDs;
+			
 	}
 }
