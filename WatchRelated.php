@@ -35,7 +35,7 @@ $wgExtensionMessagesFiles['WatchRelatedAlias'] = $dir . 'WatchRelated.alias.php'
 $wgAutoloadClasses['WatchRelated'] = $dir . 'WatchRelated.body.php';
 
 // Specify the function that will initialize the parser function.
-$wgHooks['ParserFirstCallInit'][] = 'WatchRelated::getWatchers';
+$wgHooks['ParserFirstCallInit'][] = 'WatchRelated::setup';
 
 
 /*
