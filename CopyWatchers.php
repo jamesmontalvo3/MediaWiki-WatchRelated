@@ -1,14 +1,13 @@
 <?php
 /** 
- * The WatchRelated extension, an extension to add a related article indicator
- * to a page, which then adds all watchers of that related article as watchers
- * to the page. Adds parser function #getwatchers.
+ * The CopyWatchers extension allows editors to copy watchers from other pages
+ * using the parser function #copywatchers.
  * 
  * Documentation: http://???
  * Support:       http://???
  * Source code:   http://???
  *
- * @file WatchRelated.php
+ * @file CopyWatchers.php
  * @addtogroup Extensions
  * @author James Montalvo
  * @copyright © 2013 by James Montalvo
@@ -17,25 +16,24 @@
 
 # Not a valid entry point, skip unless MEDIAWIKI is defined
 if (!defined('MEDIAWIKI')) {
-	die( "WatchRelated extension" );
+	die( "CopyWatchers extension" );
 }
 
 $wgExtensionCredits['specialpage'][] = array(
 	'path'           => __FILE__,
-	'name'           => 'Watch Related',
+	'name'           => 'Copy Watchers',
 	'url'            => 'https://???',
 	'author'         => 'James Montalvo',
-	'descriptionmsg' => 'watchrelated-desc',
+	'descriptionmsg' => 'copywatchers-desc',
 	'version'        => '0.0.1 alpha'
 );
 
 $dir = dirname( __FILE__ ) . '/';
-$wgExtensionMessagesFiles['WatchRelated'] = $dir . 'WatchRelated.i18n.php';
-$wgExtensionMessagesFiles['WatchRelatedAlias'] = $dir . 'WatchRelated.alias.php';
-$wgAutoloadClasses['WatchRelated'] = $dir . 'WatchRelated.body.php';
+$wgExtensionMessagesFiles['CopyWatchers'] = $dir . 'CopyWatchers.i18n.php';
+$wgAutoloadClasses['CopyWatchers'] = $dir . 'CopyWatchers.body.php';
 
 // Specify the function that will initialize the parser function.
-$wgHooks['ParserFirstCallInit'][] = 'WatchRelated::setup';
+$wgHooks['ParserFirstCallInit'][] = 'CopyWatchers::setup';
 
 
 /*

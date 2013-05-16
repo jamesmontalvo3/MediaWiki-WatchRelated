@@ -1,57 +1,108 @@
 <?php
 /**
- * The WatchRelated extension, an extension to add a related article indicator
- * to a page, which then adds all watchers of that related article as watchers
- * to the page.
+ * The CopyWatchers extension allows editors to copy watchers from other pages
+ * using the parser function #copywatchers. This file defines the class
+ * 
+ * Some code adapted from Extension:WhoIsWatching
  * 
  * Documentation: http://???
  * Support:       http://???
  * Source code:   http://???
  *
- * @file WatchRelated.body.php
+ * @file CopyWatchers.body.php
  * @addtogroup Extensions
  * @author James Montalvo
  * @copyright © 2013 by James Montalvo
  * @licence GNU GPL v3+
  */
 
-class WatchRelated
+class CopyWatchers
 {
 
-	static public function setup () {
-
-		$parser->setFunctionHook( 'copywatchers', array( &$this, 'copyWatchers' ) );
+	static function setup ( &$parser ) {
 		
-		// return something?
-		
-		/*
+		// I'm not really sure what the benefits of two ways of calling setFunctionHook
+		// but I've implemented them both here. They both essentially end up calling
+		// the same method: renderCopyWatchers().
 		if ( defined( get_class( $parser ) . '::SFH_OBJECT_ARGS' ) ) {
-			$parser->setFunctionHook( 'copywatchers', array( '&$this', 'copyWatchers' ), SFH_OBJECT_ARGS );
+			$parser->setFunctionHook( 'copywatchers', array( 'CopyWatchers', 'renderCopyWatchersObj' ), SFH_OBJECT_ARGS );
 		} else {
-			$parser->setFunctionHook( 'copywatchers', array( 'SFParserFunctions', 'renderArrayMap' ) );
+			$parser->setFunctionHook( 'copywatchers', array( 'CopyWatchers', 'renderCopyWatchersNonObj' ) );
 		}
-		*/
-	
+
+		return true;
+		
 	}
 
-
-	static public function copyWatchers (&$parser, $pagesToCopyWatchers) {
-		
-		$titleObj = $parser->getTitle(); //
-		$userObj  = $parser->getUser(); //
-		$userObj->addWatch( $someTitle ); //
-		
+	static function renderCopyWatchersNonObj (&$parser, $pagesToCopyWatchers='', $showOutput=false) {
 		
 		$pagesToCopyWatchers = explode(',', $pagesToCopyWatchers);
 		
+		if ( $showOutput == 'true' )
+			$showOutput = true;
+		
+		return self::renderCopyWatchers( $parser, $pagesToCopyWatchers, $showOutput );
+		
+	}
+	
+	static function renderCopyWatchersObj ( &$parser, $frame, $args ) {
+		
+		$pagesToCopyWatchers = explode(',', $frame->expand( $args[0] ) );
+	
+		if ( isset( $args[1] ) && trim( $frame->expand( $args[1] ) ) == 'true' )
+			$showOutput = true;
+		else
+			$showOutput = false;
+	
+		return self::renderCopyWatchers( $parser, $pagesToCopyWatchers, $showOutput );
+	
+	}
+	
+	static function renderCopyWatchers ( &$parser, $pagesToCopyArray, $showOutput ) {
+		global $wgCanonicalNamespaceNames;
+
 		$newWatchers = array();
 		
-		foreach( $pagesToCopyWatchers as $page ) {
-	
-			$pageObj = $this->getNamespaceAndTitle( $page );
+		$output = "Copied watchers from:\n\n";
+		
+		foreach( $pagesToCopyArray as $page ) {
 			
-			$watchers = $this->getPageWatchers( $pageObj->ns_num, $pageObj->title );
+			$output .= "* $page";
+
+			// returns Title object
+			$titleObj = self::getNamespaceAndTitle( trim($page) );
 			
+			if ( $titleObj->isRedirect() ) {
+				$redirectArticle = new Article( $titleObj );
+				
+				// FIXME: thought newFromRedirectRecurse() would find the ultimate page
+				// but it doesn't appear to be doing that
+				$titleObj = Title::newFromRedirectRecurse( $redirectArticle->getContent() );
+				$output .= " (redirects to " . $titleObj->getFullText() . ")";
+				
+				// FIXME: Do this for MW 1.19+ ???
+				// $wp = new WikiPage( $titleObj );
+				// $titleObj = $wp->followRedirect();
+				
+				// FIXME: Do one of these for MW 1.21+ ???
+				// WikiPage::followRedirect()
+				// Content::getUltimateRedirectTarget()
+
+			}
+			
+			$ns_num = $titleObj->getNamespace();
+			$title  = $titleObj->getDBkey();			
+
+			unset( $titleObj ); // prob not necessary since it will be reset shortly.
+			
+			$watchers = self::getPageWatchers( $ns_num, $title );
+			$num_watchers = count($watchers);
+			
+			if ($num_watchers == 1)
+				$output .= " (" . count($watchers) . " watcher)\n";
+			else
+				$output .= " (" . count($watchers) . " watchers)\n";
+
 			foreach ( $watchers as $userID => $dummy ) {
 				$newWatchers[$userID] = 0; // only care about $userID, and want unique.
 			}
@@ -64,9 +115,14 @@ class WatchRelated
 			$u->addWatch( $parser->getTitle() );
 		}
 		
+		if ( $showOutput )
+			return $output;
+		else
+			return "";
+			
 	}
 	
-	protected function getNamespaceAndTitle ( $pageName ) {
+	static function getNamespaceAndTitle ( $pageName ) {
 	
 		// defaults
 		$ns_num = NS_MAIN;
@@ -76,7 +132,7 @@ class WatchRelated
 		
 		// this won't test for a leading colon...but shouldn't use parser function that way anyway...
 		if ( $colonPosition ) {
-			$test_ns = $this->getNamespaceNumber( 
+			$test_ns = self::getNamespaceNumber( 
 				substr( $pageName, 0, $colonPosition )
 			);
 			
@@ -87,12 +143,13 @@ class WatchRelated
 			}
 		}
 		
-		return (object)array("ns_num"=>$ns_num, "title"=>$title);
+		return Title::makeTitle( $ns_num, $title );
+		//return (object)array("ns_num"=>$ns_num, "title"=>$title);
 	
 	}
 	
 	// returns number of namespace (can be zero) or false. Use ===.
-	protected function getNamespaceNumber ( $ns ) {
+	static function getNamespaceNumber ( $ns ) {
 		global $wgCanonicalNamespaceNames;
 		
 		foreach ( $wgCanonicalNamespaceNames as $i => $text ) {
@@ -104,14 +161,21 @@ class WatchRelated
 		return false; // if $ns not found above, does not exist
 	}
 	
-	protected function getPageWatchers ($ns, $title) {
+	static function getPageWatchers ($ns, $title) {
 		
 		// code adapted from Extension:WhoIsWatching
 		$dbr = wfGetDB( DB_SLAVE );
 		$watchingUserIDs = array();
-		$res = $dbr->select( 'watchlist', 'wl_user', array('wl_namespace'=>$ns, 'wl_title'=>$title), __METHOD__);
-		for ( $res as $row ) {
-			$watchingUserIDs[$row->wl_user] = 0; // only care about the user ID, and want unique
+		
+		
+		$res = $dbr->select(
+			'watchlist',
+			'wl_user', 
+			array('wl_namespace'=>$ns, 'wl_title'=>$title),
+			__METHOD__
+		);
+		foreach ( $res as $row ) {
+			$watchingUserIDs[ $row->wl_user ] = 0; // only care about the user ID, and want unique
 		}
 
 		return $watchingUserIDs;
