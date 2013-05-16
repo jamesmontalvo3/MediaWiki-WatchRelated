@@ -22,10 +22,10 @@ if (!defined('MEDIAWIKI')) {
 $wgExtensionCredits['specialpage'][] = array(
 	'path'           => __FILE__,
 	'name'           => 'Copy Watchers',
-	'url'            => 'https://???',
+	'url'            => 'http://www.mediawiki.org/wiki/Extension:CopyWatchers',
 	'author'         => 'James Montalvo',
 	'descriptionmsg' => 'copywatchers-desc',
-	'version'        => '0.0.1 alpha'
+	'version'        => '0.1.0'
 );
 
 $dir = dirname( __FILE__ ) . '/';
