@@ -43,11 +43,11 @@ class CopyWatchers extends ParserFunctionHelper {
 			$titleObj = self::getNamespaceAndTitle( trim($page) );
 
 			if ( $titleObj->isRedirect() ) {
-				$redirectArticle = new Article( $titleObj );
+				$redirectArticle = new \Article( $titleObj );
 
 				// FIXME: thought newFromRedirectRecurse() would find the ultimate page
 				// but it doesn't appear to be doing that
-				$titleObj = Title::newFromRedirectRecurse( $redirectArticle->getContent() );
+				$titleObj = \Title::newFromRedirectRecurse( $redirectArticle->getContent() );
 				$output .= " (redirects to " . $titleObj->getFullText() . ")";
 
 				// FIXME: Do this for MW 1.19+ ???
@@ -81,7 +81,7 @@ class CopyWatchers extends ParserFunctionHelper {
 
 		// add list of usernames as watchers to this Title
 		foreach ($newWatchers as $userID => $dummy) {
-			$u = User::newFromId($userID);
+			$u = \User::newFromId($userID);
 			$u->addWatch( $parser->getTitle() );
 		}
 
