@@ -45,19 +45,8 @@ class CopyWatchers extends ParserFunctionHelper {
 			if ( $titleObj->isRedirect() ) {
 				$redirectArticle = new \Article( $titleObj );
 
-				// FIXME: thought newFromRedirectRecurse() would find the ultimate page
-				// but it doesn't appear to be doing that
-				$titleObj = \Title::newFromRedirectRecurse( $redirectArticle->getContent() );
+				$titleObj = $redirectArticle->getRedirectTarget();
 				$output .= " (redirects to " . $titleObj->getFullText() . ")";
-
-				// FIXME: Do this for MW 1.19+ ???
-				// $wp = new WikiPage( $titleObj );
-				// $titleObj = $wp->followRedirect();
-
-				// FIXME: Do one of these for MW 1.21+ ???
-				// WikiPage::followRedirect()
-				// Content::getUltimateRedirectTarget()
-
 			}
 
 			$ns_num = $titleObj->getNamespace();
