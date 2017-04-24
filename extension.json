@@ -1,6 +1,6 @@
 {
 	"name": "Copy Watchers",
-	"version": "0.9.0",
+	"version": "0.10.0",
 	"author": "James Montalvo",
 	"url": "http://www.mediawiki.org/wiki/Extension:CopyWatchers",
 	"descriptionmsg": "copywatchers-desc",
