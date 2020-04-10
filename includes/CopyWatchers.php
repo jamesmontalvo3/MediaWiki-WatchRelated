@@ -123,7 +123,7 @@ class CopyWatchers extends ParserFunctionHelper {
 	static function getPageWatchers ($ns, $title) {
 
 		// code adapted from Extension:WhoIsWatching
-		$dbr = wfGetDB( DB_SLAVE );
+		$dbr = wfGetDB( DB_REPLICA );
 		$watchingUserIDs = array();
 
 
